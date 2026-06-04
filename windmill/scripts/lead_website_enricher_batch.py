@@ -6,7 +6,7 @@ import urllib.error
 import urllib.request
 
 
-DEFAULT_SERVICE_URL_VAR = "u/admin/lead_website_enricher_service_url"
+DEFAULT_SERVICE_URL_VAR = "u/admin/lead_website_enricher_service_url_v2"
 DEFAULT_COOLIFY_BASE_URL_VAR = "u/admin/coolify_base_url"
 DEFAULT_COOLIFY_ACCESS_TOKEN_VAR = "u/admin/coolify_access_token"
 DEFAULT_APP_UUID_VAR = "u/admin/lead_website_enricher_app_uuid"

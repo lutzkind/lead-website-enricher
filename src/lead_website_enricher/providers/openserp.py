@@ -36,6 +36,12 @@ class OpenSerpProvider(SearchProvider):
 
             engine_results = payload.get("results") or []
             for row in engine_results:
+                position = row.get("position")
+                if isinstance(position, dict):
+                    position = position.get("absolute") or position.get("page") or position.get("rank")
+                if not isinstance(position, int):
+                    rank = row.get("rank")
+                    position = rank if isinstance(rank, int) else None
                 results.append(
                     SearchResult(
                         provider="openserp",
@@ -43,7 +49,7 @@ class OpenSerpProvider(SearchProvider):
                         url=row.get("url") or row.get("link") or "",
                         title=row.get("title") or "",
                         snippet=row.get("description") or row.get("snippet") or "",
-                        position=row.get("position"),
+                        position=position,
                     )
                 )
         return results

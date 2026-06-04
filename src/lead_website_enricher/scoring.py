@@ -116,7 +116,7 @@ def _score_single_result(lead: CanonicalLead, result: SearchResult) -> tuple[int
         score += 25
         reasons.append("phone-match")
 
-    if result.position and result.position <= 3:
+    if isinstance(result.position, int) and result.position <= 3:
         score += 5
         reasons.append("top-serp-position")
 
