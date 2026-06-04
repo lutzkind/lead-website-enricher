@@ -1,0 +1,27 @@
+[
+  {
+    "source": "yellowpages",
+    "Id": "yp-1",
+    "name": "Acme Landscaping",
+    "phone": "(512) 555-0100",
+    "address": "123 Main St, Austin, TX 78701",
+    "city": "Austin",
+    "state_region": "TX",
+    "postcode": "78701",
+    "country": "US",
+    "category": "Landscaping"
+  },
+  {
+    "source": "gmaps",
+    "Id": "gm-1",
+    "name": "Blue Harbor Hotel",
+    "phone": "+44 20 7946 0958",
+    "address": "7 Harbor Road, London",
+    "city": "London",
+    "state_region": "England",
+    "postcode": "E1 6AN",
+    "lead_country": "GB",
+    "category": "Hotel",
+    "subcategory": "Boutique Hotel"
+  }
+]

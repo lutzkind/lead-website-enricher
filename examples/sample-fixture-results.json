@@ -1,0 +1,56 @@
+{
+  "Acme Landscaping US": [
+    {
+      "engine": "bing",
+      "url": "https://www.acmelandscapingtx.com/",
+      "title": "Acme Landscaping | Austin TX Landscaping Services",
+      "snippet": "Acme Landscaping serves Austin, TX with landscaping, lawn care, and irrigation."
+    },
+    {
+      "engine": "bing",
+      "url": "https://www.yellowpages.com/austin-tx/mip/acme-landscaping-123",
+      "title": "Acme Landscaping in Austin, TX",
+      "snippet": "Find reviews, hours, and directions for Acme Landscaping."
+    }
+  ],
+  "Acme Landscaping Austin US": [
+    {
+      "engine": "duckduckgo",
+      "url": "https://www.acmelandscapingtx.com/contact",
+      "title": "Contact Acme Landscaping",
+      "snippet": "Contact Acme Landscaping in Austin, TX 78701."
+    }
+  ],
+  "Acme Landscaping TX US": [],
+  "Acme Landscaping 123 Main St, Austin, TX 78701 US": [],
+  "Acme Landscaping Landscaping US": [],
+  "Acme Landscaping (512) 555-0100": [],
+  "Acme Landscaping": [],
+  "Blue Harbor Hotel GB": [
+    {
+      "engine": "bing",
+      "url": "https://www.blueharborhotel.co.uk/",
+      "title": "Blue Harbor Hotel | London Boutique Hotel",
+      "snippet": "Blue Harbor Hotel is a boutique hotel in London near Harbor Road."
+    },
+    {
+      "engine": "bing",
+      "url": "https://www.tripadvisor.com/Hotel_Review-Blue_Harbor_Hotel",
+      "title": "Blue Harbor Hotel Reviews",
+      "snippet": "Read reviews for Blue Harbor Hotel in London."
+    }
+  ],
+  "Blue Harbor Hotel London GB": [
+    {
+      "engine": "duckduckgo",
+      "url": "https://www.blueharborhotel.co.uk/contact",
+      "title": "Contact Us | Blue Harbor Hotel",
+      "snippet": "Blue Harbor Hotel, 7 Harbor Road, London E1 6AN."
+    }
+  ],
+  "Blue Harbor Hotel England GB": [],
+  "Blue Harbor Hotel 7 Harbor Road, London GB": [],
+  "Blue Harbor Hotel Boutique Hotel GB": [],
+  "Blue Harbor Hotel +44 20 7946 0958": [],
+  "Blue Harbor Hotel": []
+}
