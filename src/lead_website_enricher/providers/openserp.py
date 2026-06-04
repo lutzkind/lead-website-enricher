@@ -15,7 +15,7 @@ class OpenSerpProvider(SearchProvider):
         "duckduckgo": "duck",
     }
 
-    def __init__(self, base_url: str | None = None, timeout_seconds: int = 20):
+    def __init__(self, base_url: str | None = None, timeout_seconds: int = 6):
         self.base_url = (base_url or os.environ.get("OPENSERP_BASE_URL") or "http://127.0.0.1:7000").rstrip("/")
         self.timeout_seconds = timeout_seconds
 

@@ -17,10 +17,7 @@ def build_queries(lead: CanonicalLead) -> list[SearchQuery]:
 
     add("name-country", lead.name, lead.country)
     add("name-city", lead.name, lead.city, lead.country)
-    add("name-state", lead.name, lead.state_region, lead.country)
     add("name-address", lead.name, lead.address, lead.country)
     add("name-category-country", lead.name, lead.category or lead.industry, lead.country)
-    add("name-phone", lead.name, lead.phone)
-    add("name-only", lead.name)
 
     return queries
