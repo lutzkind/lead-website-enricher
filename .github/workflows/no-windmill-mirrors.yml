@@ -1,0 +1,12 @@
+name: no-windmill-mirrors
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  block-windmill-mirrors:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/check-no-windmill-mirrors.sh
