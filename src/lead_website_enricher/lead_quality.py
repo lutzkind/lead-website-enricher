@@ -56,6 +56,8 @@ def lead_context_score(lead: CanonicalLead) -> int:
         score += 1
     if clean_string(lead.category) or clean_string(lead.industry):
         score += 1
+    if extract_domain(lead.source_url):
+        score += 2
     return score
 
 
@@ -66,6 +68,8 @@ def weak_lead_reason(lead: CanonicalLead) -> str | None:
     generic_name = is_generic_business_name(lead.name)
     if generic_name and context_score < 5:
         return "generic-business-name"
+    if _is_short_ambiguous_name(lead.name) and context_score < 5:
+        return "insufficient-identifying-context"
     if context_score < 3:
         return "insufficient-identifying-context"
     return None
@@ -85,3 +89,13 @@ def cache_key_for_lead(lead: CanonicalLead) -> str:
         extract_domain(lead.source_url),
     ]
     return "|".join(part.strip().casefold() for part in parts if part is not None)
+
+
+def _is_short_ambiguous_name(name: str) -> bool:
+    tokens = tokenize(name)
+    if len(tokens) <= 1:
+        return True
+    if len(tokens) == 2 and any(token.isdigit() for token in tokens):
+        return True
+    compact = "".join(tokens)
+    return len(compact) <= 5

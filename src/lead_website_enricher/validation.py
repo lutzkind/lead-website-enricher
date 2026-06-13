@@ -140,7 +140,7 @@ def validate_candidate(
             parsed = urlparse(link)
             if extract_domain(link) != extract_domain(home.final_url):
                 continue
-            if not any(token in parsed.path.casefold() for token in ("/contact", "/about", "/location", "/visit")):
+            if not any(token in parsed.path.casefold() for token in ("contact", "about", "location", "hours", "visit")):
                 continue
             page = page_fetcher(link)
             if page is not None:
@@ -207,6 +207,10 @@ def validate_candidate(
     domain_tokens = tokenize(canonical_domain.replace(".", " "))
     if lead_tokens and any(token in domain_tokens for token in lead_tokens):
         reasons.append("validated-domain-name-match")
+    compact_name = normalize_text(lead.name).replace(" ", "")
+    compact_domain = canonical_domain.replace(".", "").replace("-", "")
+    if compact_name and compact_name in compact_domain:
+        reasons.append("validated-compact-domain-name-match")
 
     accepted = False
     reason_set = set(reasons)
@@ -218,11 +222,21 @@ def validate_candidate(
         "validated-category-match",
     } & reason_set:
         accepted = True
-    elif "validated-name-match" in reason_set and "validated-domain-name-match" in reason_set and {
+    elif "validated-name-match" in reason_set and {
+        "validated-domain-name-match",
+        "validated-compact-domain-name-match",
+    } & reason_set and {
         "validated-city-match",
         "validated-state-match",
         "validated-category-match",
     } & reason_set:
+        accepted = True
+    elif "validated-name-match" in reason_set and {
+        "validated-domain-name-match",
+        "validated-compact-domain-name-match",
+    } & reason_set and "validated-localbusiness-schema" in reason_set:
+        accepted = True
+    elif "validated-name-match" in reason_set and "validated-compact-domain-name-match" in reason_set:
         accepted = True
 
     return {

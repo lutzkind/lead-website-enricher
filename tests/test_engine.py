@@ -48,6 +48,31 @@ class AdapterTests(unittest.TestCase):
         self.assertTrue(any(query.value == '"Acme Landscaping" Austin US Landscaping' for query in queries))
         self.assertTrue(any(query.value == '"Acme Landscaping" Austin US' for query in queries))
 
+    def test_normalizes_uppercase_osm_and_raw_tag_context(self) -> None:
+        lead = normalize_lead_row(
+            {
+                "source": "OSM",
+                "Id": "653",
+                "name": "La Baleine Cafe",
+                "country_name": "United States",
+                "category": "restaurant",
+                "osm_url": "https://www.openstreetmap.org/node/2940015171",
+                "raw_tags_json": json.dumps(
+                    {
+                        "addr:street": "Homer Spit Road",
+                        "phone": "+1 907 2996672",
+                        "cuisine": "regional",
+                    }
+                ),
+            }
+        )
+
+        self.assertEqual(lead.source, "osm")
+        self.assertEqual(lead.country, "United States")
+        self.assertEqual(lead.phone, "+1 907 2996672")
+        self.assertEqual(lead.address, "Homer Spit Road")
+        self.assertEqual(lead.source_url, "https://www.openstreetmap.org/node/2940015171")
+
 
 class EngineTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -200,6 +225,106 @@ class EngineTests(unittest.TestCase):
         results = enrich_rows(rows, fixture, engines=["bing"])
         self.assertIsNone(results[0].winner)
         self.assertEqual(results[0].stats["skip_reason"], "insufficient-identifying-context")
+
+    def test_distinctive_osm_name_with_source_context_is_searched(self) -> None:
+        fixture = FixtureSearchProvider(ROOT / "examples" / "sample-fixture-results.json")
+        rows = [
+            {
+                "source": "OSM",
+                "Id": "645",
+                "name": "Wild Honey Bistro",
+                "country": "United States",
+                "category": "restaurant",
+                "subcategory": "crepe",
+                "osm_url": "https://www.openstreetmap.org/node/1741030105",
+            }
+        ]
+
+        results = enrich_rows(rows, fixture, engines=["bing"])
+
+        self.assertIsNone(results[0].stats["skip_reason"])
+        self.assertGreater(results[0].stats["query_count"], 0)
+        self.assertTrue(any("official website" in query.value for query in results[0].queries))
+
+    def test_validated_medium_candidate_is_promoted_to_high(self) -> None:
+        fixture_rows = {
+            '"Wild Honey Bistro" United States restaurant official website': [
+                {
+                    "engine": "bing",
+                    "url": "https://www.wildhoneybistro.com/",
+                    "title": "Wild Honey Bistro",
+                    "snippet": "Breakfast and lunch.",
+                    "position": 1,
+                }
+            ]
+        }
+        with tempfile.NamedTemporaryFile("w+", suffix=".json") as handle:
+            json.dump(fixture_rows, handle)
+            handle.flush()
+            fixture = FixtureSearchProvider(handle.name)
+            rows = [
+                {
+                    "source": "osm",
+                    "Id": "645",
+                    "name": "Wild Honey Bistro",
+                    "country": "United States",
+                    "category": "restaurant",
+                    "osm_url": "https://www.openstreetmap.org/node/1741030105",
+                }
+            ]
+
+            def fake_page_fetcher(url: str, *, timeout_seconds: float = 4.0):
+                from lead_website_enricher.validation import PageData
+
+                if url != "https://wildhoneybistro.com":
+                    return None
+                return PageData(
+                    url=url,
+                    final_url="https://www.wildhoneybistro.com/",
+                    title="Wild Honey Bistro",
+                    text="Wild Honey Bistro is a restaurant serving breakfast and lunch.",
+                    links=[],
+                    schema_types={"restaurant"},
+                )
+
+            results = enrich_rows(rows, fixture, engines=["bing"], page_fetcher=fake_page_fetcher)
+
+        self.assertIsNotNone(results[0].winner)
+        self.assertEqual(results[0].winner.confidence, "high")
+        self.assertEqual(results[0].winner.domain, "wildhoneybistro.com")
+
+    def test_unvalidated_high_serp_candidate_is_not_writable_winner(self) -> None:
+        fixture_rows = {
+            '"Wild Honey Bistro" United States restaurant official website': [
+                {
+                    "engine": "bing",
+                    "url": "https://www.wildhoneybistro.com/menu",
+                    "title": "Wild Honey Bistro Menu",
+                    "snippet": "Wild Honey Bistro restaurant menu in the United States.",
+                    "position": 1,
+                }
+            ]
+        }
+        with tempfile.NamedTemporaryFile("w+", suffix=".json") as handle:
+            json.dump(fixture_rows, handle)
+            handle.flush()
+            fixture = FixtureSearchProvider(handle.name)
+            rows = [
+                {
+                    "source": "osm",
+                    "Id": "645",
+                    "name": "Wild Honey Bistro",
+                    "country": "United States",
+                    "category": "restaurant",
+                    "osm_url": "https://www.openstreetmap.org/node/1741030105",
+                }
+            ]
+            results = enrich_rows(rows, fixture, engines=["bing"], page_fetcher=lambda url, timeout_seconds=4.0: None)
+            summary = summarize_results(results)
+
+        self.assertIsNone(results[0].winner)
+        self.assertFalse(results[0].stats["writable"])
+        self.assertEqual(summary["high_confidence_count"], 0)
 
     def test_health_summary_uses_medium_review_count(self) -> None:
         fixture = FixtureSearchProvider(ROOT / "examples" / "sample-fixture-results.json")

@@ -31,6 +31,7 @@ def enrich_rows(
     engine_order = requested_engines[:]
     if not engine_order:
         engine_order = ["bing", "google", "duckduckgo", "ecosia"]
+    provider_unavailable_engines = _provider_unavailable_engines(provider)
 
     for row in rows:
         lead = normalize_lead_row(row, source=source_override)
@@ -84,6 +85,16 @@ def enrich_rows(
         candidates = []
         lead_started_at = time.monotonic()
         engines_considered, engines_skipped = RUNTIME.engine_plan(engine_order)
+        if provider_unavailable_engines:
+            available_engines = []
+            for engine in engines_considered:
+                reason = provider_unavailable_engines.get(engine)
+                if reason:
+                    engines_skipped.append({"engine": engine, "reason": reason})
+                    continue
+                available_engines.append(engine)
+            engines_considered = available_engines
+        run_engine_failures: dict[str, int] = {}
 
         for query in queries:
             if time.monotonic() - lead_started_at >= per_lead_timeout_seconds:
@@ -93,6 +104,8 @@ def enrich_rows(
             query_attempts.append(query.to_dict())
             useful_results_from_query = False
             for engine in engines_considered:
+                if run_engine_failures.get(engine, 0) >= 1:
+                    continue
                 if time.monotonic() - lead_started_at >= per_lead_timeout_seconds:
                     errors.append({"type": "timeout", "message": "per-lead-timeout-exceeded"})
                     break
@@ -134,17 +147,18 @@ def enrich_rows(
                             "error": str(exc),
                         }
                     )
+                    run_engine_failures[engine] = run_engine_failures.get(engine, 0) + 1
                     continue
 
                 candidates = score_candidates(lead, search_results)
-                winner = candidates[0] if candidates else None
                 for candidate in candidates[:3]:
                     validation = validate_candidate(
                         lead,
                         candidate,
                         page_fetcher=page_fetcher or fetch_page,
                     )
-                    if validation.get("accepted") and candidate.confidence == DEFAULT_HIGH_CONFIDENCE:
+                    if validation.get("accepted") and candidate.score >= 70:
+                        candidate.confidence = DEFAULT_HIGH_CONFIDENCE
                         winner = candidate
                         winner.url = validation.get("canonical_url") or candidate.url
                         winner.domain = validation.get("canonical_domain") or candidate.domain
@@ -184,6 +198,9 @@ def enrich_rows(
             "winner_score": winner.score if winner else None,
             "winner_domain": winner.domain if winner else None,
             "winner_reasons": winner.reasons if winner else [],
+            "review_confidence": candidates[0].confidence if candidates and winner is None else None,
+            "review_score": candidates[0].score if candidates and winner is None else None,
+            "review_domain": candidates[0].domain if candidates and winner is None else None,
             "blocked_candidates": blocked_candidates,
             "early_stop": early_stop,
             "errors": errors,
@@ -217,10 +234,16 @@ def summarize_results(results: list[EnrichmentResult], *, provider_meta: dict[st
     per_lead_elapsed_seconds: dict[str, float] = {}
 
     for result in results:
-        if result.winner is None:
-            confidence_counts["none"] += 1
-        else:
+        if result.winner is not None:
             confidence_counts[result.winner.confidence] = confidence_counts.get(result.winner.confidence, 0) + 1
+        elif result.candidates:
+            review_confidence = result.candidates[0].confidence
+            if review_confidence in {"medium", "low"}:
+                confidence_counts[review_confidence] = confidence_counts.get(review_confidence, 0) + 1
+            else:
+                confidence_counts["none"] += 1
+        else:
+            confidence_counts["none"] += 1
         if result.stats.get("early_stop"):
             early_stop_count += 1
         search_error_count += len(result.stats.get("errors") or [])
@@ -250,3 +273,16 @@ def summarize_results(results: list[EnrichmentResult], *, provider_meta: dict[st
     if provider_meta:
         payload["provider_meta"] = provider_meta
     return payload
+
+
+def _provider_unavailable_engines(provider: SearchProvider) -> dict[str, str]:
+    checker = getattr(provider, "unavailable_engines", None)
+    if checker is None:
+        return {}
+    try:
+        unavailable = checker()
+    except Exception:
+        return {}
+    if not isinstance(unavailable, dict):
+        return {}
+    return {str(engine): str(reason) for engine, reason in unavailable.items() if engine and reason}

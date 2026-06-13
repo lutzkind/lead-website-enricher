@@ -134,6 +134,30 @@ Use this repo as the core engine and later wrap it in:
 - one Windmill batch script
 - one Windmill flow for scheduling and retries
 
+## Production Deployment
+
+Coolify should manage this service as the `lead-website-enricher` application from:
+
+- repo: `https://github.com/lutzkind/lead-website-enricher.git`
+- branch: `main`
+- build pack: Dockerfile
+- exposed/internal port: `3000`
+- health check: `GET /health` on port `3000`
+- internal Windmill URL: `http://lead-website-enricher:3000`
+
+Default container environment:
+
+- `PORT=3000`
+- `OPENSERP_BASE_URL=http://openserp-managed:7000`
+- `LEAD_WEBSITE_ENRICHER_ENGINES=ecosia,bing,duckduckgo`
+- `LEAD_WEBSITE_ENRICHER_OPENSERP_TIMEOUT_SECONDS=8`
+- `LEAD_WEBSITE_ENRICHER_PER_LEAD_TIMEOUT_SECONDS=18`
+- `LEAD_WEBSITE_ENRICHER_PER_QUERY_LIMIT=3`
+
+OpenSERP engine order should prefer currently healthy engines. As of the June
+2026 production validation, DuckDuckGo was circuit-open, Google was not part of
+the default order, and Bing/Ecosia were the only useful engines.
+
 ## License
 
 MIT

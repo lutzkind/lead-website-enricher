@@ -10,6 +10,8 @@ def _classify_error(message: str) -> str:
     lowered = (message or "").casefold()
     if "429" in lowered or "captcha" in lowered:
         return "rate_limited"
+    if "circuit_open" in lowered or "circuit breaker" in lowered:
+        return "rate_limited"
     if "timed out" in lowered or "timeout" in lowered:
         return "timeout"
     return "error"

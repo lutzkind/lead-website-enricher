@@ -56,6 +56,18 @@ class OpenSerpProvider(SearchProvider):
             "health": self._request_json(f"{self.base_url}/health"),
         }
 
+    def unavailable_engines(self) -> dict[str, str]:
+        payload = self._request_json(f"{self.base_url}/health")
+        unavailable: dict[str, str] = {}
+        for row in payload.get("engines") or []:
+            name = str(row.get("name") or "").strip()
+            status = str(row.get("status") or "").strip()
+            if name and status and status != "ready":
+                unavailable[name] = status
+                if name == "duckduckgo":
+                    unavailable["duck"] = status
+        return unavailable
+
     def health(self, *, test_query: str, engine: str, limit: int = 1) -> dict:
         resolved_engine = self.ENGINE_ALIASES.get(engine, engine)
         health_payload = self._request_json(f"{self.base_url}/health")
