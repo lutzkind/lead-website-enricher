@@ -184,6 +184,23 @@ class EngineTests(unittest.TestCase):
         self.assertIsNone(results[0].winner)
         self.assertEqual(results[0].stats["skip_reason"], "generic-business-name")
 
+    def test_non_generic_but_contextless_lead_is_skipped(self) -> None:
+        fixture = FixtureSearchProvider(ROOT / "examples" / "sample-fixture-results.json")
+        rows = [
+            {
+                "source": "osm",
+                "Id": "625",
+                "name": "Bay 5",
+                "country": "United States",
+                "category": "restaurant",
+                "subcategory": "mexican",
+                "osm_url": "https://www.openstreetmap.org/node/4840740377",
+            }
+        ]
+        results = enrich_rows(rows, fixture, engines=["bing"])
+        self.assertIsNone(results[0].winner)
+        self.assertEqual(results[0].stats["skip_reason"], "insufficient-identifying-context")
+
     def test_health_summary_uses_medium_review_count(self) -> None:
         fixture = FixtureSearchProvider(ROOT / "examples" / "sample-fixture-results.json")
         rows = [

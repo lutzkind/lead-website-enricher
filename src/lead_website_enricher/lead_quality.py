@@ -56,8 +56,6 @@ def lead_context_score(lead: CanonicalLead) -> int:
         score += 1
     if clean_string(lead.category) or clean_string(lead.industry):
         score += 1
-    if extract_domain(lead.source_url):
-        score += 2
     return score
 
 
