@@ -31,6 +31,15 @@ GENERIC_BUSINESS_TOKENS = {
     "tavern",
 }
 
+SCRAPER_SOURCE_DOMAINS = {
+    "foursquare.com",
+    "google.com",
+    "goo.gl",
+    "maps.app.goo.gl",
+    "openstreetmap.org",
+    "yellowpages.com",
+}
+
 
 def is_generic_business_name(name: str) -> bool:
     tokens = tokenize(name)
@@ -56,7 +65,7 @@ def lead_context_score(lead: CanonicalLead) -> int:
         score += 1
     if clean_string(lead.category) or clean_string(lead.industry):
         score += 1
-    if extract_domain(lead.source_url):
+    if has_identifying_source_context(lead):
         score += 2
     return score
 
@@ -89,6 +98,13 @@ def cache_key_for_lead(lead: CanonicalLead) -> str:
         extract_domain(lead.source_url),
     ]
     return "|".join(part.strip().casefold() for part in parts if part is not None)
+
+
+def has_identifying_source_context(lead: CanonicalLead) -> bool:
+    domain = extract_domain(lead.source_url)
+    if not domain:
+        return False
+    return not any(domain == blocked or domain.endswith(f".{blocked}") for blocked in SCRAPER_SOURCE_DOMAINS)
 
 
 def _is_short_ambiguous_name(name: str) -> bool:

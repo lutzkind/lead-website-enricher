@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 
 from .models import CandidateScore, CanonicalLead, SearchResult
+from .lead_quality import has_identifying_source_context
 from .text import extract_domain, normalize_phone, normalize_text, tokenize
 
 
@@ -185,7 +186,7 @@ def _score_single_result(lead: CanonicalLead, result: SearchResult) -> tuple[int
         score += 30
         reasons.append("phone-match")
 
-    source_domain = extract_domain(lead.source_url)
+    source_domain = extract_domain(lead.source_url) if has_identifying_source_context(lead) else ""
     if source_domain and domain == source_domain:
         score += 35
         reasons.append("source-url-domain-match")

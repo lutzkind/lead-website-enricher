@@ -4,7 +4,7 @@ from urllib.parse import urlparse
 
 from .models import CanonicalLead, SearchQuery
 from .text import clean_string
-from .lead_quality import is_generic_business_name
+from .lead_quality import has_identifying_source_context, is_generic_business_name
 
 
 def build_queries(lead: CanonicalLead) -> list[SearchQuery]:
@@ -26,7 +26,7 @@ def build_queries(lead: CanonicalLead) -> list[SearchQuery]:
     location = clean_string(" ".join(part for part in [lead.city, lead.state_region, lead.country] if clean_string(part)))
     generic_name = is_generic_business_name(lead.name)
     source_host = None
-    if lead.source_url:
+    if has_identifying_source_context(lead):
         parsed = urlparse(lead.source_url if "://" in lead.source_url else f"https://{lead.source_url}")
         source_host = parsed.netloc or parsed.path
 
