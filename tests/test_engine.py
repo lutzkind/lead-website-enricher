@@ -174,6 +174,9 @@ class EngineTests(unittest.TestCase):
                 "source": "osm",
                 "Id": "627",
                 "name": "Harbor View",
+                "address": "314 First Street",
+                "city": "Pepin",
+                "state_region": "WI",
                 "country": "United States",
                 "category": "restaurant",
             }
@@ -208,7 +211,7 @@ class EngineTests(unittest.TestCase):
         ]
         results = enrich_rows(rows, fixture, engines=["bing"])
         self.assertIsNone(results[0].winner)
-        self.assertEqual(results[0].stats["skip_reason"], "generic-business-name")
+        self.assertEqual(results[0].stats["skip_reason"], "insufficient-identifying-context")
 
     def test_non_generic_but_contextless_lead_is_skipped(self) -> None:
         fixture = FixtureSearchProvider(ROOT / "examples" / "sample-fixture-results.json")
@@ -256,6 +259,33 @@ class EngineTests(unittest.TestCase):
         self.assertIsNone(results[0].winner)
         self.assertEqual(results[0].stats["skip_reason"], "insufficient-identifying-context")
         self.assertEqual(results[0].stats["query_count"], 0)
+
+    def test_phone_does_not_make_no_address_lead_searchable(self) -> None:
+        fixture = FixtureSearchProvider(ROOT / "examples" / "sample-fixture-results.json")
+        rows = [
+            {
+                "source": "osm",
+                "Id": "714",
+                "name": "Campfire Kitchen",
+                "country": "United States",
+                "category": "restaurant",
+                "phone": "+1-907-623-8212",
+                "osm_url": "https://www.openstreetmap.org/node/8368483617",
+            }
+        ]
+
+        lead = normalize_lead_row(rows[0])
+        queries = build_queries(lead)
+        self.assertEqual(weak_lead_reason(lead), "insufficient-identifying-context")
+        self.assertFalse(any("907" in query.value or "623" in query.value for query in queries))
+        self.assertFalse(any(query.strategy in {"name-phone", "phone-name", "name-phone-location", "phone-name-location"} for query in queries))
+
+        results = enrich_rows(rows, fixture, engines=["bing"])
+
+        self.assertIsNone(results[0].winner)
+        self.assertEqual(results[0].stats["skip_reason"], "insufficient-identifying-context")
+        self.assertEqual(results[0].stats["query_count"], 0)
+        self.assertEqual(results[0].stats["engines_attempted"], [])
 
     def test_address_context_still_searches_and_finds_official_domain(self) -> None:
         fixture_rows = {
@@ -395,6 +425,7 @@ class EngineTests(unittest.TestCase):
                     "source": "osm",
                     "Id": "645",
                     "name": "Wild Honey Bistro",
+                    "address": "123 Main Street",
                     "country": "United States",
                     "category": "restaurant",
                     "osm_url": "https://www.openstreetmap.org/node/1741030105",

@@ -4,7 +4,7 @@ from collections import defaultdict
 
 from .models import CandidateScore, CanonicalLead, SearchResult
 from .lead_quality import has_identifying_source_context
-from .text import extract_domain, normalize_phone, normalize_text, tokenize
+from .text import extract_domain, normalize_text, tokenize
 
 
 DIRECTORY_DOMAINS = {
@@ -181,11 +181,6 @@ def _score_single_result(lead: CanonicalLead, result: SearchResult) -> tuple[int
         score += 25
         reasons.append("address-match")
 
-    lead_phone = normalize_phone(lead.phone)
-    if lead_phone and lead_phone in normalize_phone(searchable_text):
-        score += 30
-        reasons.append("phone-match")
-
     source_domain = extract_domain(lead.source_url) if has_identifying_source_context(lead) else ""
     if source_domain and domain == source_domain:
         score += 35
@@ -213,7 +208,7 @@ def blocked_domain_reason(domain: str) -> str | None:
 
 def _has_high_confidence_evidence(lead: CanonicalLead, reasons: list[str]) -> bool:
     reason_set = set(reasons)
-    if {"phone-match", "address-match", "source-url-domain-match"} & reason_set:
+    if {"address-match", "source-url-domain-match"} & reason_set:
         return True
 
     domain_signals = {

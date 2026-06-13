@@ -55,8 +55,6 @@ def lead_context_score(lead: CanonicalLead) -> int:
     score = 0
     if clean_string(lead.address):
         score += 3
-    if normalize_phone(lead.phone):
-        score += 3
     if clean_string(lead.city):
         score += 2
     if clean_string(lead.state_region):
@@ -73,6 +71,8 @@ def lead_context_score(lead: CanonicalLead) -> int:
 def weak_lead_reason(lead: CanonicalLead) -> str | None:
     if not clean_string(lead.name):
         return "missing-name"
+    if not clean_string(lead.address):
+        return "insufficient-identifying-context"
     context_score = lead_context_score(lead)
     generic_name = is_generic_business_name(lead.name)
     if generic_name and context_score < 5:
