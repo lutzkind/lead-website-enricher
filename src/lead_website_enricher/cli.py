@@ -24,6 +24,7 @@ def build_parser() -> argparse.ArgumentParser:
     enrich.add_argument("--fixture-file", help="Fixture result file, required for fixture provider.")
     enrich.add_argument("--engine", action="append", default=[], help="Search engine to query. Repeatable.")
     enrich.add_argument("--per-query-limit", type=int, default=5)
+    enrich.add_argument("--per-lead-timeout-seconds", type=float, default=20.0)
 
     query = subparsers.add_parser("print-queries", help="Print generated queries for each lead.")
     query.add_argument("--input", required=True, help="JSON, JSONL, or CSV file of raw lead rows.")
@@ -49,8 +50,18 @@ def command_enrich_file(args: argparse.Namespace) -> int:
         engines=args.engine,
         per_query_limit=args.per_query_limit,
         source_override=args.source,
+        per_lead_timeout_seconds=args.per_lead_timeout_seconds,
     )
-    payload = summarize_results(results)
+    payload = summarize_results(
+        results,
+        provider_meta={
+            "provider": args.provider,
+            "openserp_base_url": getattr(provider, "base_url", None),
+            "engines": args.engine,
+            "per_query_limit": args.per_query_limit,
+            "per_lead_timeout_seconds": args.per_lead_timeout_seconds,
+        },
+    )
     dump_json(args.output, payload)
     print(json.dumps({k: v for k, v in payload.items() if k != "results"}, indent=2, sort_keys=True))
     return 0

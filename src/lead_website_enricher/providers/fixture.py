@@ -13,14 +13,14 @@ class FixtureSearchProvider(SearchProvider):
         payload = json.loads(self.fixture_file.read_text())
         self.data = payload
 
-    def search(self, query: SearchQuery, *, engines: list[str], limit: int) -> list[SearchResult]:
+    def search(self, query: SearchQuery, *, engine: str, limit: int) -> list[SearchResult]:
         rows = self.data.get(query.value, [])
         results: list[SearchResult] = []
         for row in rows[:limit]:
             results.append(
                 SearchResult(
                     provider="fixture",
-                    engine=row.get("engine") or (engines[0] if engines else "fixture"),
+                    engine=row.get("engine") or engine,
                     url=row["url"],
                     title=row.get("title", ""),
                     snippet=row.get("snippet", ""),
@@ -28,3 +28,12 @@ class FixtureSearchProvider(SearchProvider):
                 )
             )
         return results
+
+    def health(self, *, test_query: str, engine: str, limit: int = 1) -> dict:
+        return {
+            "ok": True,
+            "provider": "fixture",
+            "engine": engine,
+            "test_query": test_query,
+            "result_count": len(self.data.get(test_query, [])[:limit]),
+        }
